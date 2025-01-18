@@ -511,17 +511,12 @@ const handleClaimSzn = async () => {
   </div>
 
   <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold">Approve </button> 
-  <button
-            onClick={handleClaimSzn}
-            className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold"
-          >
-            Claim SZNS
-          </button>
+
           <button
             onClick={handleBurnXlr8ForSzn}
             className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold"
           >
-            burn SZNS
+            burn SZNS (coming soon)
           </button>
           </div>
   
