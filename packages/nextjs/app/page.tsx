@@ -7,7 +7,7 @@ import lockerABI from "./abi/locker2.json"
 import burnerABI from "./abi/burner.json"
 import xlr8ABI from "./abi/xlr8.json"
 import sznsABI  from "./abi/szns.json"
-
+import Modal from "./Modal";
 
 const lockerAddress = "0x9432EE4b5CD5e7616955506D7451C4e2D1Ce2623";
 
@@ -28,7 +28,10 @@ const seasonData = [
   { id: 4, name: "Winter" },
 ];
 
+
 const currentSeasonId = 4; // Corresponds to "Winter"
+
+
 
 const PredictionSite = () => {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
@@ -37,6 +40,8 @@ const PredictionSite = () => {
   const [lockedNFTs, setLockedNFTs] = useState(0); // Number of NFTs locked in the current season
   const [xlr8Balance, setXlr8Balance] = useState(0);
   const [burnAmount, setBurnAmount] = useState<number>(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 ; // For tracking transaction status
   const [sznsClaimable, setSznsClaimable] = useState<boolean>(false);  
 
@@ -81,8 +86,22 @@ const PredictionSite = () => {
 const [seasons, setSeasons] = useState<number>(1);
 const [lockedSeasons, setLockedSeasons] = useState<{ [key: number]: { locked: boolean, amount: number, txHash: string } }>({});
 
+
+const formatTime = (ms: number): string => {
+  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+  return `${days}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+
+
+
 const handleLockMon = async (index: number) => {
   const { monAmount } = boxStates[index];
+  const unlockAfterDays = 34; // Unlock after 34 days
+  const unlockTimestamp = Date.now() + unlockAfterDays * 24 * 60 * 60 * 1000;
 
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
@@ -92,31 +111,33 @@ const handleLockMon = async (index: number) => {
   const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
 
   try {
-    // Proceed with locking 2 MON
     const lockTx = await contract.lockMon({
-      value: ethers.utils.parseEther("2"), // Locking 2 MON (native token)
+      value: ethers.utils.parseEther("2"), // Locking 2 MON
     });
 
-    alert(`Box ${index + 1}: Transaction in progress, please wait...`);
+    // Show modal with transaction in progress
+    setModalMessage(`Box ${index + 1}: Transaction in progress, please wait...`);
+    setModalVisible(true);
 
-    // Wait for the transaction to be confirmed
     await lockTx.wait();
 
-    // Update UI after success
-    alert(`Box ${index + 1}: 2 MON successfully locked!`);
-
+    // Show modal with success message
+    setModalMessage(`Box ${index + 1}: 2 MON successfully locked!`);
     setBoxStates((prevState) =>
       prevState.map((box, i) =>
         i === index
-          ? { ...box, locked: true, txHash: lockTx.hash }
+          ? { ...box, locked: true, unlockTime: unlockTimestamp, txHash: lockTx.hash }
           : box
       )
     );
   } catch (error) {
     console.error(`Box ${index + 1}: Error locking MON:`, error);
-    alert(`Box ${index + 1}: Failed to lock MON. Please try again.`);
+
+    // Show modal with error message
+    setModalMessage(`Box ${index + 1}: Failed to lock MON. Please try again.`);
   }
 };
+
 
 const handleClaimXlr8 = async (index: number) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -131,19 +152,19 @@ const handleClaimXlr8 = async (index: number) => {
     const hasLocked = await contract.hasLocked(await signer.getAddress());
 
     if (!hasLocked) {
-      return alert(`Box ${index + 1}: You must lock MON before claiming XLR8.`);
+      return alert(`monadszns ${index + 1}: You must lock MON before claiming XLR8.`);
     }
 
     // Proceed with claiming XLR8
     const claimTx = await contract.claimXlr8();
 
-    alert(`Box ${index + 1}: Claiming XLR8, please wait...`);
+    alert(`monadszns ${index + 1}: Claiming XLR8, please wait...`);
 
     // Wait for the transaction to be confirmed
     await claimTx.wait();
 
     // Update UI after success
-    alert(`Box ${index + 1}: XLR8 successfully claimed!`);
+    alert(`monadszns ${index + 1}: XLR8 successfully claimed!`);
 
     // You can add additional logic here if you want to update the UI or state
     setBoxStates((prevState) =>
@@ -154,7 +175,7 @@ const handleClaimXlr8 = async (index: number) => {
       )
     );
   } catch (error) {
-    console.error(`Box ${index + 1}: Error claiming XLR8:`, error);
+    console.error(`monadszns ${index + 1}: Error claiming XLR8:`, error);
     alert(`Box ${index + 1}: Failed to claim XLR8. Please try again.`);
   }
 };
@@ -206,6 +227,7 @@ const handleClaimXlr8 = async (index: number) => {
     locked: boolean; // Whether the box is locked or not
     txHash?: string; // Optional property to store the transaction hash
     claimed: boolean;
+    unlockTime: number;
   }
 
   
@@ -214,7 +236,8 @@ const handleClaimXlr8 = async (index: number) => {
       monAmount: 0, // default MON amount for each season
       selectedSeasons: null,
       locked: false, // Initially not locked
-      claimed: false
+      claimed: false,
+      unlockTime: 0,
     }))
   );
 // Handle approval of XLR8 tokens (Step 1)
@@ -302,6 +325,49 @@ const handleBurnXlr8ForSzn = async () => {
   }
 };
 
+const UnlockButton = ({ unlockTime, onUnlock }: { unlockTime: number; onUnlock: () => void }) => {
+  const [timeLeft, setTimeLeft] = useState<number>(unlockTime - Date.now());
+  const isUnlockable = timeLeft <= 0;
+
+  useEffect(() => {
+    if (timeLeft > 0) {
+      const interval = setInterval(() => {
+        setTimeLeft(unlockTime - Date.now());
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [unlockTime, timeLeft]);
+
+  return (
+    <button
+      onClick={onUnlock}
+      disabled={!isUnlockable}
+      className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] ${
+        isUnlockable ? "bg-green-400 text-black" : "bg-gray-400 text-white cursor-not-allowed"
+      }`}
+    >
+      {isUnlockable
+        ? "Unlock MON"
+        : `Unlock Mon in ${formatTime(timeLeft)}`}
+    </button>
+  );
+};
+
+
+const handleUnlockMon = (index: number) => {
+  setBoxStates((prevState) =>
+    prevState.map((box, i) =>
+      i === index
+        ? { ...box, locked: false, unlockTime: 0 }
+        : box
+    )
+  );
+  alert(`Box ${index + 1}: MON successfully unlocked!`);
+};
+
+
+
 
 // Handle claiming SZNS tokens after burning XLR8
 const handleClaimSzn = async () => {
@@ -326,6 +392,7 @@ const handleClaimSzn = async () => {
     setTxStatus("An error occurred while claiming SZNS.");
   }
 };
+
 
   
   return (
@@ -364,7 +431,7 @@ const handleClaimSzn = async () => {
           <div className="bg-pink-200 rounded-lg p-4 mt-4 shadow-lg">
             <p
               style={{
-                fontFamily: "'Bruno Ace SC', sans-serif",
+                fontFamily: "'Modak', sans-serif",
                 color: "navy",
                 marginBottom: "8px",
               }}
@@ -376,12 +443,27 @@ const handleClaimSzn = async () => {
             </p>
 
             <button
-              onClick={() => handleLockMon(index)}
-              className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mb-2 ${boxStates[index].locked ? "bg-gray-400 text-white cursor-not-allowed" : "bg-yellow-400 text-black"}`}
+              onClick={() => {
+                handleLockMon(index);
+                setModalMessage(`monadszns ${index + 1}: Transaction in progress, please wait...`);
+                setModalVisible(true);
+              }}
+              className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mb-2 ${
+                boxStates[index].locked
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-yellow-400 text-black"
+              }`}
               disabled={boxStates[index].locked} // Disable button when locked
             >
               {boxStates[index].locked ? "LOCKED IN" : "Lock MON"}
             </button>
+            <Modal
+      isOpen={modalVisible}
+      message={modalMessage}
+      onClose={() => setModalVisible(false)}
+    />
+  
+
             {boxStates[index].locked && !boxStates[index].claimed && (
               <button
                 onClick={() => handleClaimXlr8(index)}
@@ -389,6 +471,7 @@ const handleClaimSzn = async () => {
               >
                 Claim XLR8
               </button>
+              
             )}
 
             {boxStates[index].claimed && (
@@ -397,6 +480,24 @@ const handleClaimSzn = async () => {
                 disabled
               >
                 XLR8 CLAIMED
+              </button>
+            )}
+             {/* Unstake MON Button */}
+             {boxStates[index].locked && (
+              <button
+                onClick={() => handleUnlockMon(index)}
+                className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mt-4 ${
+                  Date.now() < boxStates[index].unlockTime
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-red-400 text-white"
+                }`}
+                disabled={Date.now() < boxStates[index].unlockTime}
+              >
+                {Date.now() < boxStates[index].unlockTime
+                  ? `Unlock MON in ${formatTime(
+                      boxStates[index].unlockTime - Date.now()
+                    )}`
+                  : "Unlock MON"}
               </button>
             )}
           </div>
@@ -509,15 +610,18 @@ const handleClaimSzn = async () => {
       </button>
     </div>
   </div>
+  
 
-  <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold">Approve </button> 
+  <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold ">Approve XLR8 ...</button>  
 
           <button
             onClick={handleBurnXlr8ForSzn}
-            className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold"
+            className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold "
           >
             burn SZNS (coming soon)
           </button>
+       
+     
           </div>
   
 

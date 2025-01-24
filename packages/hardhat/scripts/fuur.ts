@@ -12,7 +12,7 @@ async function main() {
   const lockerAddress = "0x9432EE4b5CD5e7616955506D7451C4e2D1Ce2623"; // Replace with the deployed Locker contract address
 
   // Amount of XLR8 tokens to approve and send (6 million tokens)
-  const amountToSend = ethers.parseUnits("6000000", 18); // 6 million XLR8 tokens
+  const amountToSend = ethers.parseUnits("9000000", 18); // 6 million XLR8 tokens
 
   // Deploy the Locker contract
   const lockerDeployment = await deployments.deploy("Locker", {
