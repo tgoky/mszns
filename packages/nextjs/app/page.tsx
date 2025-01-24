@@ -116,13 +116,13 @@ const handleLockMon = async (index: number) => {
     });
 
     // Show modal with transaction in progress
-    setModalMessage(`Box ${index + 1}: Transaction in progress, please wait...`);
+    setModalMessage(` Transaction in progress, please wait...`);
     setModalVisible(true);
 
     await lockTx.wait();
 
     // Show modal with success message
-    setModalMessage(`Box ${index + 1}: 2 MON successfully locked!`);
+    setModalMessage(`2 MON successfully locked!`);
     setBoxStates((prevState) =>
       prevState.map((box, i) =>
         i === index
@@ -131,10 +131,10 @@ const handleLockMon = async (index: number) => {
       )
     );
   } catch (error) {
-    console.error(`Box ${index + 1}: Error locking MON:`, error);
+    console.error(` Error locking MON:`, error);
 
     // Show modal with error message
-    setModalMessage(`Box ${index + 1}: Failed to lock MON. Please try again.`);
+    setModalMessage(` Failed to lock MON. Please try again.`);
   }
 };
 
@@ -152,19 +152,19 @@ const handleClaimXlr8 = async (index: number) => {
     const hasLocked = await contract.hasLocked(await signer.getAddress());
 
     if (!hasLocked) {
-      return alert(`monadszns ${index + 1}: You must lock MON before claiming XLR8.`);
+      return alert(`monadszns : You must lock MON before claiming XLR8.`);
     }
 
     // Proceed with claiming XLR8
     const claimTx = await contract.claimXlr8();
 
-    alert(`monadszns ${index + 1}: Claiming XLR8, please wait...`);
+    alert(`monadszns : Claiming XLR8, please wait...`);
 
     // Wait for the transaction to be confirmed
     await claimTx.wait();
 
     // Update UI after success
-    alert(`monadszns ${index + 1}: XLR8 successfully claimed!`);
+    alert(`monadszns : XLR8 successfully claimed!`);
 
     // You can add additional logic here if you want to update the UI or state
     setBoxStates((prevState) =>
@@ -175,8 +175,8 @@ const handleClaimXlr8 = async (index: number) => {
       )
     );
   } catch (error) {
-    console.error(`monadszns ${index + 1}: Error claiming XLR8:`, error);
-    alert(`Box ${index + 1}: Failed to claim XLR8. Please try again.`);
+    console.error(`monadszns : Error claiming XLR8:`, error);
+    alert(`Box : Failed to claim XLR8. Please try again.`);
   }
 };
 
