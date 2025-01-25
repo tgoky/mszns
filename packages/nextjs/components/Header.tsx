@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Bars3Icon, UserCircleIcon } from "@heroicons/react/24/outline";
 import { useOutsideClick } from "~~/hooks/scaffold-eth";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
+import Accelerate from "./Accelerate"; // Import the Accelerate component
 
 type HeaderMenuLink = {
   label: string;
@@ -45,6 +46,8 @@ export const HeaderMenuLinks = () => {
 export const Header = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for the modal
+
   const burgerMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +88,15 @@ export const Header = () => {
           <HeaderMenuLinks />
         </ul>
       </div>
+      {/* Center Menu for Modal */}
+      <div className="navbar-center">
+        <button
+          className="btn btn-primary text-white bg-orange-500 font-bold px-6 py-2 rounded-full"
+          onClick={() => setIsModalOpen(true)}
+        >
+          Click for Accelerate Starter Pack!
+        </button>
+      </div>
       <div className="navbar-end flex-grow mr-4 flex items-center space-x-4">
         <div className="relative" ref={profileMenuRef}>
           <button
@@ -95,18 +107,29 @@ export const Header = () => {
           </button>
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-gray-500 rounded-lg shadow-lg p-4 z-30 border border-green-500">
-             
               <div className="flex flex-col items-center justify-center mb-4 border-b border-green-500 pb-4">
                 <RainbowKitCustomConnectButton />
               </div>
-              <div className="flex flex-col items-center justify-center pt-4">
-              
-              </div>
+              <div className="flex flex-col items-center justify-center pt-4"></div>
             </div>
           )}
         </div>
         <FaucetButton />
       </div>
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setIsModalOpen(false)}
+            >
+              ✕
+            </button>
+            <Accelerate /> {/* Render the Accelerate component */}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
