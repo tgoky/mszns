@@ -10,7 +10,7 @@ const Accelerate = () => {
     {
       title: "Follow us on Twitter",
       description: "Start accelerating with us on x !",
-      link: "https://x.com/muffledbird",
+      link: "https://x.com/blockhashlabs",
       buttonText: "Follow on x",
     },
     {
