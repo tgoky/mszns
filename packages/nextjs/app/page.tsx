@@ -1,17 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
 
+import { useEffect, useState } from "react";
+import Modal from "./Modal";
+import burnerABI from "./abi/burner.json";
+import lockerABI from "./abi/locker2.json";
+import sznsABI from "./abi/szns.json";
+import xlr8ABI from "./abi/xlr8.json";
 import { ethers } from "ethers";
 
-import lockerABI from "./abi/locker2.json"
-import burnerABI from "./abi/burner.json"
-import xlr8ABI from "./abi/xlr8.json"
-import sznsABI  from "./abi/szns.json"
-import Modal from "./Modal";
-
 const lockerAddress = "0x9432EE4b5CD5e7616955506D7451C4e2D1Ce2623";
-
-
 
 const getContract = () => {
   if (typeof window === "undefined" || !window.ethereum) {
@@ -28,10 +25,7 @@ const seasonData = [
   { id: 4, name: "Winter" },
 ];
 
-
 const currentSeasonId = 4; // Corresponds to "Winter"
-
-
 
 const PredictionSite = () => {
   const [contract, setContract] = useState<ethers.Contract | null>(null);
@@ -41,19 +35,18 @@ const PredictionSite = () => {
   const [xlr8Balance, setXlr8Balance] = useState(0);
   const [burnAmount, setBurnAmount] = useState<number>(0);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
-; // For tracking transaction status
-  const [sznsClaimable, setSznsClaimable] = useState<boolean>(false);  
+  const [modalMessage, setModalMessage] = useState(""); // For tracking transaction status
+  const [sznsClaimable, setSznsClaimable] = useState<boolean>(false);
 
-  const [txStatus, setTxStatus] = useState<string>(""); 
-  const [selectedSeasons, setSelectedSeasons] = useState<number | null>(null);// Track the user input for burn amount
+  const [txStatus, setTxStatus] = useState<string>("");
+  const [selectedSeasons, setSelectedSeasons] = useState<number | null>(null); // Track the user input for burn amount
 
   // Simulating the TVL locked for each season
-  const lockedTVL: { [key in 'Spring' | 'Summer' | 'Fall' | 'Winter']: number } = {
-    Spring: 450,  // Example: 450 NFTs locked in Spring
-    Summer: 600,  // Example: 600 NFTs locked in Summer
-    Fall: 750,    // Example: 750 NFTs locked in Fall
-    Winter: 500   // Example: 500 NFTs locked in Winter
+  const lockedTVL: { [key in "Spring" | "Summer" | "Fall" | "Winter"]: number } = {
+    Spring: 450, // Example: 450 NFTs locked in Spring
+    Summer: 600, // Example: 600 NFTs locked in Summer
+    Fall: 750, // Example: 750 NFTs locked in Fall
+    Winter: 500, // Example: 500 NFTs locked in Winter
   };
 
   const maxLockedNFTs = 1000; // Define the maximum NFTs locked to 1000 for the "Accelerate" bar
@@ -73,7 +66,6 @@ const PredictionSite = () => {
       }, 1000);
 
       // Set initial locked NFTs for the current season
-      
 
       return () => clearInterval(interval);
     } catch (error) {
@@ -81,108 +73,94 @@ const PredictionSite = () => {
     }
   }, []);
 
-  
   const [monAmount, setMonAmount] = useState<number>(0);
-const [seasons, setSeasons] = useState<number>(1);
-const [lockedSeasons, setLockedSeasons] = useState<{ [key: number]: { locked: boolean, amount: number, txHash: string } }>({});
+  const [seasons, setSeasons] = useState<number>(1);
+  const [lockedSeasons, setLockedSeasons] = useState<{
+    [key: number]: { locked: boolean; amount: number; txHash: string };
+  }>({});
 
+  const formatTime = (ms: number): string => {
+    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+    return `${days}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
 
-const formatTime = (ms: number): string => {
-  const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-  const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-  const seconds = Math.floor((ms % (60 * 1000)) / 1000);
-  return `${days}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-};
+  const handleLockMon = async (index: number) => {
+    const { monAmount } = boxStates[index];
+    const unlockAfterDays = 34; // Unlock after 34 days
+    const unlockTimestamp = Date.now() + unlockAfterDays * 24 * 60 * 60 * 1000;
 
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
 
+    const contractAddress = lockerAddress; // Your contract address
+    const lockerAbi = lockerABI; // Your contract ABI
+    const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
 
+    try {
+      const lockTx = await contract.lockMon({
+        value: ethers.utils.parseEther("2"), // Locking 2 MON
+      });
 
-const handleLockMon = async (index: number) => {
-  const { monAmount } = boxStates[index];
-  const unlockAfterDays = 34; // Unlock after 34 days
-  const unlockTimestamp = Date.now() + unlockAfterDays * 24 * 60 * 60 * 1000;
+      // Show modal with transaction in progress
+      setModalMessage(` Transaction in progress, please wait...`);
+      setModalVisible(true);
 
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
+      await lockTx.wait();
 
-  const contractAddress = lockerAddress; // Your contract address
-  const lockerAbi = lockerABI; // Your contract ABI
-  const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
+      // Show modal with success message
+      setModalMessage(`2 MON successfully locked!`);
+      setBoxStates(prevState =>
+        prevState.map((box, i) =>
+          i === index ? { ...box, locked: true, unlockTime: unlockTimestamp, txHash: lockTx.hash } : box,
+        ),
+      );
+    } catch (error) {
+      console.error(` Error locking MON:`, error);
 
-  try {
-    const lockTx = await contract.lockMon({
-      value: ethers.utils.parseEther("2"), // Locking 2 MON
-    });
-
-    // Show modal with transaction in progress
-    setModalMessage(` Transaction in progress, please wait...`);
-    setModalVisible(true);
-
-    await lockTx.wait();
-
-    // Show modal with success message
-    setModalMessage(`2 MON successfully locked!`);
-    setBoxStates((prevState) =>
-      prevState.map((box, i) =>
-        i === index
-          ? { ...box, locked: true, unlockTime: unlockTimestamp, txHash: lockTx.hash }
-          : box
-      )
-    );
-  } catch (error) {
-    console.error(` Error locking MON:`, error);
-
-    // Show modal with error message
-    setModalMessage(` Failed to lock MON. Please try again.`);
-  }
-};
-
-
-const handleClaimXlr8 = async (index: number) => {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
-
-  const contractAddress = lockerAddress; // Your contract address
-  const lockerAbi = lockerABI; // Your contract ABI
-  const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
-
-  try {
-    // Check if the user has already locked MON
-    const hasLocked = await contract.hasLocked(await signer.getAddress());
-
-    if (!hasLocked) {
-      return alert(`monadszns : You must lock MON before claiming XLR8.`);
+      // Show modal with error message
+      setModalMessage(` Failed to lock MON. Please try again.`);
     }
+  };
 
-    // Proceed with claiming XLR8
-    const claimTx = await contract.claimXlr8();
+  const handleClaimXlr8 = async (index: number) => {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
 
-    alert(`monadszns : Claiming XLR8, please wait...`);
+    const contractAddress = lockerAddress; // Your contract address
+    const lockerAbi = lockerABI; // Your contract ABI
+    const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
 
-    // Wait for the transaction to be confirmed
-    await claimTx.wait();
+    try {
+      // Check if the user has already locked MON
+      const hasLocked = await contract.hasLocked(await signer.getAddress());
 
-    // Update UI after success
-    alert(`monadszns : XLR8 successfully claimed!`);
+      if (!hasLocked) {
+        return alert(` You must lock MON before claiming XLR8.`);
+      }
 
-    // You can add additional logic here if you want to update the UI or state
-    setBoxStates((prevState) =>
-      prevState.map((box, i) =>
-        i === index
-          ? { ...box, claimed: true, txHash: claimTx.hash }
-          : box
-      )
-    );
-  } catch (error) {
-    console.error(`monadszns : Error claiming XLR8:`, error);
-    alert(`Box : Failed to claim XLR8. Please try again.`);
-  }
-};
+      // Proceed with claiming XLR8
+      const claimTx = await contract.claimXlr8();
 
+      alert(`Claiming XLR8, please wait...`);
 
+      // Wait for the transaction to be confirmed
+      await claimTx.wait();
 
+      // Update UI after success
+      alert(` XLR8 successfully claimed!`);
 
+      // You can add additional logic here if you want to update the UI or state
+      setBoxStates(prevState =>
+        prevState.map((box, i) => (i === index ? { ...box, claimed: true, txHash: claimTx.hash } : box)),
+      );
+    } catch (error) {
+      console.error(`Error claiming XLR8:`, error);
+      alert(`Box : Failed to claim XLR8. Please try again.`);
+    }
+  };
 
   // Stake xlr8 to earn szn
   const handleStakeXlr8 = async () => {
@@ -220,7 +198,6 @@ const handleClaimXlr8 = async (index: number) => {
     setBurnAmount(amountToBurn);
   };
 
-
   interface BoxState {
     monAmount: number; // Amount of MON the user wants to lock
     selectedSeasons: null | any; // Replace 'any' with the actual type of selected seasons, if applicable
@@ -230,7 +207,6 @@ const handleClaimXlr8 = async (index: number) => {
     unlockTime: number;
   }
 
-  
   const [boxStates, setBoxStates] = useState<BoxState[]>(
     seasonData.map(() => ({
       monAmount: 0, // default MON amount for each season
@@ -238,163 +214,154 @@ const handleClaimXlr8 = async (index: number) => {
       locked: false, // Initially not locked
       claimed: false,
       unlockTime: 0,
-    }))
+    })),
   );
-// Handle approval of XLR8 tokens (Step 1)
-const handleApproveXlr8 = async () => {
-  if (burnAmount <= 0) {
-    setTxStatus("Please enter a valid amount to approve.");
-    return;
-  }
-
-  try {
-    // Set up Ethereum provider and signer
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-
-    const xlr8TokenAddress = "0x5f4a0368Cb7d7A53789ea40248c28E0526172450";
-    const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318";
-
-    // Create contract instance for XLR8 token
-    const xlr8Contract = new ethers.Contract(xlr8TokenAddress, xlr8ABI, signer);
-
-    // Convert burnAmount to 18 decimals
-    const burnAmountInUnits = ethers.utils.parseUnits(burnAmount.toString(), 18);
-
-    // Approve the burner contract to transfer XLR8 tokens from user
-    const txApproval = await xlr8Contract.approve(
-      burnerContractAddress, // Burner contract address
-      burnAmountInUnits // Amount of XLR8 the burner contract can spend
-    );
-    await txApproval.wait(); // Wait for approval to be confirmed
-
-    setTxStatus(`Approval successful! You can now burn ${burnAmount} XLR8 tokens.`);
-  } catch (err) {
-    console.error(err);
-    setTxStatus("An error occurred while approving XLR8 tokens.");
-  }
-};
-
-// Handle burning XLR8 for SZNS (Step 2)
-const handleBurnXlr8ForSzn = async () => {
-  if (burnAmount <= 0) {
-    setTxStatus("Please enter a valid amount to burn.");
-    return;
-  }
-
-  try {
-    // Set up Ethereum provider and signer
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-
-    const xlr8TokenAddress = "0x5f4a0368Cb7d7A53789ea40248c28E0526172450";
-    const sznsTokenAddress = "0xe3c200bC40066F9A61e5cf442b05497D6545d8c2";
-    const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318";
-
-    // Create contract instances for XLR8 and SZNS
-    const xlr8Contract = new ethers.Contract(xlr8TokenAddress, xlr8ABI, signer);
-    const sznsContract = new ethers.Contract(sznsTokenAddress, sznsABI, signer);
-
-    // Convert burnAmount to 18 decimals
-    const burnAmountInUnits = ethers.utils.parseUnits(burnAmount.toString(), 18);
-
-    // Check if approval was done previously
-    const allowance = await xlr8Contract.allowance(signer.getAddress(), burnerContractAddress);
-    if (allowance.lt(burnAmountInUnits)) {
-      setTxStatus("Please approve XLR8 tokens first.");
+  // Handle approval of XLR8 tokens (Step 1)
+  const handleApproveXlr8 = async () => {
+    if (burnAmount <= 0) {
+      setTxStatus("Please enter a valid amount to approve.");
       return;
     }
 
-    // Burn XLR8 tokens by transferring them to the burner contract
-    const txBurn = await xlr8Contract.transferFrom(
-      signer.getAddress(), // Sender address (user's address)
-      burnerContractAddress, // Burner contract address
-      burnAmountInUnits // Amount to burn
-    );
-    await txBurn.wait(); // Wait for burn to complete
+    try {
+      // Set up Ethereum provider and signer
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
 
-    // Mint SZNS tokens (1 SZNS for every 1000 XLR8 burned)
-    const sznsAmount = burnAmountInUnits.div(ethers.utils.parseUnits("1000", 18)); // Calculate SZNS amount based on the formula (1000 XLR8 = 1 SZNS)
-    const txMint = await sznsContract.mint(signer.getAddress(), sznsAmount);
-    await txMint.wait(); // Wait for minting to complete
+      const xlr8TokenAddress = "0x5f4a0368Cb7d7A53789ea40248c28E0526172450";
+      const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318";
 
-    setTxStatus(`Successfully burned ${burnAmount} XLR8 and received ${ethers.utils.formatUnits(sznsAmount, 18)} SZNS tokens!`);
-  } catch (err) {
-    console.error(err);
-    setTxStatus("An error occurred while processing your burn transaction.");
-  }
-};
+      // Create contract instance for XLR8 token
+      const xlr8Contract = new ethers.Contract(xlr8TokenAddress, xlr8ABI, signer);
 
-const UnlockButton = ({ unlockTime, onUnlock }: { unlockTime: number; onUnlock: () => void }) => {
-  const [timeLeft, setTimeLeft] = useState<number>(unlockTime - Date.now());
-  const isUnlockable = timeLeft <= 0;
+      // Convert burnAmount to 18 decimals
+      const burnAmountInUnits = ethers.utils.parseUnits(burnAmount.toString(), 18);
 
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const interval = setInterval(() => {
-        setTimeLeft(unlockTime - Date.now());
-      }, 1000);
+      // Approve the burner contract to transfer XLR8 tokens from user
+      const txApproval = await xlr8Contract.approve(
+        burnerContractAddress, // Burner contract address
+        burnAmountInUnits, // Amount of XLR8 the burner contract can spend
+      );
+      await txApproval.wait(); // Wait for approval to be confirmed
 
-      return () => clearInterval(interval);
+      setTxStatus(`Approval successful! You can now burn ${burnAmount} XLR8 tokens.`);
+    } catch (err) {
+      console.error(err);
+      setTxStatus("An error occurred while approving XLR8 tokens.");
     }
-  }, [unlockTime, timeLeft]);
+  };
 
-  return (
-    <button
-      onClick={onUnlock}
-      disabled={!isUnlockable}
-      className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] ${
-        isUnlockable ? "bg-green-400 text-black" : "bg-gray-400 text-white cursor-not-allowed"
-      }`}
-    >
-      {isUnlockable
-        ? "Unlock MON"
-        : `Unlock Mon in ${formatTime(timeLeft)}`}
-    </button>
-  );
-};
+  // Handle burning XLR8 for SZNS (Step 2)
+  const handleBurnXlr8ForSzn = async () => {
+    if (burnAmount <= 0) {
+      setTxStatus("Please enter a valid amount to burn.");
+      return;
+    }
 
+    try {
+      // Set up Ethereum provider and signer
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
 
-const handleUnlockMon = (index: number) => {
-  setBoxStates((prevState) =>
-    prevState.map((box, i) =>
-      i === index
-        ? { ...box, locked: false, unlockTime: 0 }
-        : box
-    )
-  );
-  alert(`Box ${index + 1}: MON successfully unlocked!`);
-};
+      const xlr8TokenAddress = "0x5f4a0368Cb7d7A53789ea40248c28E0526172450";
+      const sznsTokenAddress = "0xe3c200bC40066F9A61e5cf442b05497D6545d8c2";
+      const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318";
 
+      // Create contract instances for XLR8 and SZNS
+      const xlr8Contract = new ethers.Contract(xlr8TokenAddress, xlr8ABI, signer);
+      const sznsContract = new ethers.Contract(sznsTokenAddress, sznsABI, signer);
 
+      // Convert burnAmount to 18 decimals
+      const burnAmountInUnits = ethers.utils.parseUnits(burnAmount.toString(), 18);
 
+      // Check if approval was done previously
+      const allowance = await xlr8Contract.allowance(signer.getAddress(), burnerContractAddress);
+      if (allowance.lt(burnAmountInUnits)) {
+        setTxStatus("Please approve XLR8 tokens first.");
+        return;
+      }
 
-// Handle claiming SZNS tokens after burning XLR8
-const handleClaimSzn = async () => {
-  const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318"; // Address of the Burner contract
+      // Burn XLR8 tokens by transferring them to the burner contract
+      const txBurn = await xlr8Contract.transferFrom(
+        signer.getAddress(), // Sender address (user's address)
+        burnerContractAddress, // Burner contract address
+        burnAmountInUnits, // Amount to burn
+      );
+      await txBurn.wait(); // Wait for burn to complete
 
-  try {
-    // Set up Ethereum provider and signer
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
+      // Mint SZNS tokens (1 SZNS for every 1000 XLR8 burned)
+      const sznsAmount = burnAmountInUnits.div(ethers.utils.parseUnits("1000", 18)); // Calculate SZNS amount based on the formula (1000 XLR8 = 1 SZNS)
+      const txMint = await sznsContract.mint(signer.getAddress(), sznsAmount);
+      await txMint.wait(); // Wait for minting to complete
 
-    // Create a contract instance for the Burner contract
-    const burnerContract = new ethers.Contract(burnerContractAddress, burnerABI, signer);
+      setTxStatus(
+        `Successfully burned ${burnAmount} XLR8 and received ${ethers.utils.formatUnits(sznsAmount, 18)} SZNS tokens!`,
+      );
+    } catch (err) {
+      console.error(err);
+      setTxStatus("An error occurred while processing your burn transaction.");
+    }
+  };
 
-    // Call the claimSZNS function from the Burner contract
-    const txClaim = await burnerContract.claimSZNS();
-    await txClaim.wait(); // Wait for the claim transaction to be confirmed
+  const UnlockButton = ({ unlockTime, onUnlock }: { unlockTime: number; onUnlock: () => void }) => {
+    const [timeLeft, setTimeLeft] = useState<number>(unlockTime - Date.now());
+    const isUnlockable = timeLeft <= 0;
 
-    setTxStatus("Successfully claimed SZNS tokens!");
-    setSznsClaimable(false); // Reset the claim button state after claiming
-  } catch (err) {
-    console.error(err);
-    setTxStatus("An error occurred while claiming SZNS.");
-  }
-};
+    useEffect(() => {
+      if (timeLeft > 0) {
+        const interval = setInterval(() => {
+          setTimeLeft(unlockTime - Date.now());
+        }, 1000);
 
+        return () => clearInterval(interval);
+      }
+    }, [unlockTime, timeLeft]);
 
-  
+    return (
+      <button
+        onClick={onUnlock}
+        disabled={!isUnlockable}
+        className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] ${
+          isUnlockable ? "bg-green-400 text-black" : "bg-gray-400 text-white cursor-not-allowed"
+        }`}
+      >
+        {isUnlockable ? "Unlock MON" : `Unlock Mon in ${formatTime(timeLeft)}`}
+      </button>
+    );
+  };
+
+  const handleUnlockMon = (index: number) => {
+    setBoxStates(prevState =>
+      prevState.map((box, i) => (i === index ? { ...box, locked: false, unlockTime: 0 } : box)),
+    );
+    setModalMessage(` Mon will be available to unlock after 34 days of locking`);
+    setModalVisible(true);
+  };
+
+  // Handle claiming SZNS tokens after burning XLR8
+  const handleClaimSzn = async () => {
+    const burnerContractAddress = "0x96d315cd4Da92e3a17265E9b7486823ce07DD318"; // Address of the Burner contract
+
+    try {
+      // Set up Ethereum provider and signer
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      // Create a contract instance for the Burner contract
+      const burnerContract = new ethers.Contract(burnerContractAddress, burnerABI, signer);
+
+      // Call the claimSZNS function from the Burner contract
+      const txClaim = await burnerContract.claimSZNS();
+      await txClaim.wait(); // Wait for the claim transaction to be confirmed
+
+      setTxStatus("Successfully claimed SZNS tokens!");
+      setSznsClaimable(false); // Reset the claim button state after claiming
+    } catch (err) {
+      console.error(err);
+      setTxStatus("An error occurred while claiming SZNS.");
+    }
+  };
+
   return (
     <div
       className="min-h-screen flex flex-col bg-cover bg-center"
@@ -402,107 +369,92 @@ const handleClaimSzn = async () => {
     >
       {/* Header */}
       <div className="absolute w-full top-0 left-0 text-center py-8 bg-gradient-to-red from-yellow-600 to-pink-500">
-        <h1
-          className="text-6xl font-bold"
-          style={{ fontFamily: "'Faster One', sans-serif", color: "navy" }}
-        >
+        <h1 className="text-6xl font-bold" style={{ fontFamily: "'Faster One', sans-serif", color: "navy" }}>
           Welcome to Monad Szns
         </h1>
       </div>
 
       {/* Content */}
       <div className="flex flex-row flex-grow mt-24">
-  <div className="w-full md:w-1/2 p-6 overflow-hidden">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {seasonData.map(({ id, name }, index) => (
-        <div
-          key={id}
-          className={`p-4 rounded-lg shadow-md text-center ${
-            boxStates[index].locked ? "bg-blue-500 text-white" : "bg-white text-black"
-          }`}
-          style={{
-            backgroundImage: "url('/gridc.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            height: "450px",
-          }}
-        >
-          <h2 className="text-xl font-bold mb-2">{name}</h2>
-          <div className="bg-pink-200 rounded-lg p-4 mt-4 shadow-lg">
-            <p
-              style={{
-                fontFamily: "'Modak', sans-serif",
-                color: "navy",
-                marginBottom: "8px",
-              }}
-            >
-              Lock in MONAD to Start Accelerating
-            </p>
-            <p className="font-semibold text-lg mb-2">
-              Selected Amount: 2 MON
-            </p>
-
-            <button
-              onClick={() => {
-                handleLockMon(index);
-                setModalMessage(`monadszns ${index + 1}: Transaction in progress, please wait...`);
-                setModalVisible(true);
-              }}
-              className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mb-2 ${
-                boxStates[index].locked
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-yellow-400 text-black"
-              }`}
-              disabled={boxStates[index].locked} // Disable button when locked
-            >
-              {boxStates[index].locked ? "LOCKED IN" : "Lock MON"}
-            </button>
-            <Modal
-      isOpen={modalVisible}
-      message={modalMessage}
-      onClose={() => setModalVisible(false)}
-    />
-  
-
-            {boxStates[index].locked && !boxStates[index].claimed && (
-              <button
-                onClick={() => handleClaimXlr8(index)}
-                className="px-4 py-2 bg-green-400 rounded-lg text-black font-bold w-full max-w-[200px] mt-4"
-              >
-                Claim XLR8
-              </button>
-              
-            )}
-
-            {boxStates[index].claimed && (
-              <button
-                className="px-4 py-2 bg-gray-400 rounded-lg text-white font-bold w-full max-w-[200px] mt-4 cursor-not-allowed"
-                disabled
-              >
-                XLR8 CLAIMED
-              </button>
-            )}
-             {/* Unstake MON Button */}
-             {boxStates[index].locked && (
-              <button
-                onClick={() => handleUnlockMon(index)}
-                className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mt-4 ${
-                  Date.now() < boxStates[index].unlockTime
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-red-400 text-white"
+        <div className="w-full md:w-1/2 p-6 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {seasonData.map(({ id, name }, index) => (
+              <div
+                key={id}
+                className={`p-4 rounded-lg shadow-md text-center ${
+                  boxStates[index].locked ? "bg-blue-500 text-white" : "bg-white text-black"
                 }`}
-                disabled={Date.now() < boxStates[index].unlockTime}
+                style={{
+                  backgroundImage: "url('/gridc.png')",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  height: "450px",
+                }}
               >
-                {Date.now() < boxStates[index].unlockTime
-                  ? `Unlock MON in ${formatTime(
-                      boxStates[index].unlockTime - Date.now()
-                    )}`
-                  : "Unlock MON"}
-              </button>
-            )}
-          </div>
-       
+                <h2 className="text-xl font-bold mb-2">{name}</h2>
+                <div className="bg-pink-200 rounded-lg p-4 mt-4 shadow-lg">
+                  <p
+                    style={{
+                      fontFamily: "'Modak', sans-serif",
+                      color: "navy",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Lock in MONAD to Start Accelerating
+                  </p>
+                  <p className="font-semibold text-lg mb-2">Selected Amount: 2 MON</p>
 
+                  <button
+                    onClick={() => {
+                      handleLockMon(index);
+                      setModalMessage(` Transaction in progress, please wait...`);
+                      setModalVisible(true);
+                    }}
+                    className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mb-2 ${
+                      boxStates[index].locked ? "bg-gray-400 text-white cursor-not-allowed" : "bg-yellow-400 text-black"
+                    }`}
+                    disabled={boxStates[index].locked} // Disable button when locked
+                  >
+                    {boxStates[index].locked ? "LOCKED IN" : "Lock MON"}
+                  </button>
+
+                  {boxStates[index] && (
+                    <button
+                      onClick={() => handleUnlockMon(index)}
+                      className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mt-4 ${
+                        Date.now() < boxStates[index].unlockTime
+                          ? "bg-gray-400 text-white cursor-not-allowed"
+                          : "bg-red-400 text-white"
+                      }`}
+                      disabled={Date.now() < boxStates[index].unlockTime}
+                    >
+                      {Date.now() < boxStates[index].unlockTime
+                        ? `Unlock MON in ${formatTime(boxStates[index].unlockTime - Date.now())}`
+                        : "Unlock MON"}
+                    </button>
+                  )}
+
+                  <Modal isOpen={modalVisible} message={modalMessage} onClose={() => setModalVisible(false)} />
+
+                  {boxStates[index].locked && !boxStates[index].claimed && (
+                    <button
+                      onClick={() => handleClaimXlr8(index)}
+                      className="px-4 py-2 bg-green-400 rounded-lg text-black font-bold w-full max-w-[200px] mt-4"
+                    >
+                      Claim XLR8
+                    </button>
+                  )}
+
+                  {boxStates[index].claimed && (
+                    <button
+                      className="px-4 py-2 bg-gray-400 rounded-lg text-white font-bold w-full max-w-[200px] mt-4 cursor-not-allowed"
+                      disabled
+                    >
+                      XLR8 CLAIMED
+                    </button>
+                  )}
+                  {/* Unstake MON Button */}
+                </div>
 
                 {/* Accelerate Bar */}
                 <div className="mt-4">
@@ -536,111 +488,91 @@ const handleClaimSzn = async () => {
         {/* Right Side */}
         <div className="w-1/2 p-4">
           <div className="bg-yellow-500 p-4 rounded-lg shadow-md text-center">
-
             <div className="mt-6 text-center">
-           
-            <img src="/monadszns.gif" alt="NFT preview" className="mx-auto w-full max-w-md" />
-          </div>
-           {/* Mint progress container */}
-   
-            <button
-              onClick={handleStakeXlr8}
-              className="mt-4 px-4 py-2 bg-pink-400 rounded-lg text-black font-bold"
-            >
+              <img src="/monadszns.gif" alt="NFT preview" className="mx-auto w-full max-w-md" />
+            </div>
+            {/* Mint progress container */}
+
+            <button onClick={handleStakeXlr8} className="mt-4 px-4 py-2 bg-pink-400 rounded-lg text-black font-bold">
               Monad SZN Mint Coming
             </button>
           </div>
 
-            {/* GIF Preview of NFT */}
-           
+          {/* GIF Preview of NFT */}
 
-          
           {/* Accelerate Bar */}
-        {/* Accelerate Bar */}
-{/* Accelerate Bar */}
-<div className="mt-6 bg-green-800 p-6 rounded-lg shadow-md text-white text-center">
-  <h3 className="text-xl font-bold mb-4">Accelerate Bar</h3>
+          {/* Accelerate Bar */}
+          {/* Accelerate Bar */}
+          <div className="mt-6 bg-green-800 p-6 rounded-lg shadow-md text-white text-center">
+            <h3 className="text-xl font-bold mb-4">Accelerate Bar</h3>
 
-  {/* Blue containers for xlr8 and szn balances side by side with space between */}
-  <div className="mt-4 flex justify-between gap-6 mb-6">
-    {/* xlr8 Balance container */}
-    <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
-      <p className="text-lg font-semibold">accelerate across monad</p>
-    </div>
+            {/* Blue containers for xlr8 and szn balances side by side with space between */}
+            <div className="mt-4 flex justify-between gap-6 mb-6">
+              {/* xlr8 Balance container */}
+              <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
+                <p className="text-lg font-semibold">accelerate across monad</p>
+              </div>
 
-    {/* szn Balance container */}
-    <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
-      <p className="text-lg font-semibold">SZNS </p>
-    </div> 
-  </div>
+              {/* szn Balance container */}
+              <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
+                <p className="text-lg font-semibold">SZNS </p>
+              </div>
+            </div>
 
-  {/* User Input for Burn Amount */}
-  <div className="flex items-center mb-6 ">
-    <input
-      type="number"
-      value={burnAmount}
-      onChange={(e) => setBurnAmount(Number(e.target.value))}
-      className="w-3/5 px-4 py-2 bg-white text-black rounded-lg mr-4"
-      placeholder="Enter amount of xlr8 to burn"
-    />
-    <div className="flex space-x-2">
-      <button
-        onClick={() => handlePredefinedBurn(25)}
-        className="px-4 py-2 bg-orange-400 text-white rounded-lg"
-      >
-        25%
-      </button>
-      <button
-        onClick={() => handlePredefinedBurn(50)}
-        className="px-4 py-2 bg-yellow-400 text-white rounded-lg"
-      >
-        50%
-      </button>
-      <button
-        onClick={() => handlePredefinedBurn(75)}
-        className="px-4 py-2 bg-pink-400 text-white rounded-lg"
-      >
-        75%
-      </button>
-      <button
-        onClick={() => handlePredefinedBurn(100)}
-        className="px-4 py-2 bg-yellow-400 text-white rounded-lg"
-      >
-        100%
-      </button>
-    </div>
-  </div>
-  
+            {/* User Input for Burn Amount */}
+            <div className="flex items-center mb-6 ">
+              <input
+                type="number"
+                value={burnAmount}
+                onChange={e => setBurnAmount(Number(e.target.value))}
+                className="w-3/5 px-4 py-2 bg-white text-black rounded-lg mr-4"
+                placeholder="Enter amount of xlr8 to burn"
+              />
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handlePredefinedBurn(25)}
+                  className="px-4 py-2 bg-orange-400 text-white rounded-lg"
+                >
+                  25%
+                </button>
+                <button
+                  onClick={() => handlePredefinedBurn(50)}
+                  className="px-4 py-2 bg-yellow-400 text-white rounded-lg"
+                >
+                  50%
+                </button>
+                <button
+                  onClick={() => handlePredefinedBurn(75)}
+                  className="px-4 py-2 bg-pink-400 text-white rounded-lg"
+                >
+                  75%
+                </button>
+                <button
+                  onClick={() => handlePredefinedBurn(100)}
+                  className="px-4 py-2 bg-yellow-400 text-white rounded-lg"
+                >
+                  100%
+                </button>
+              </div>
+            </div>
 
-  <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold ">Approve XLR8 ...</button>  
+            <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold ">
+              Approve XLR8 ...
+            </button>
 
-          <button
-            onClick={handleBurnXlr8ForSzn}
-            className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold "
-          >
-            burn SZNS (coming soon)
-          </button>
-       
-     
+            <button onClick={handleBurnXlr8ForSzn} className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold ">
+              burn SZNS (coming soon)
+            </button>
           </div>
-  
 
-{/* Claim SZNS button */}
+          {/* Claim SZNS button */}
 
-      {/* Transaction Status */}
-      {txStatus && (
-        <div className="mt-4 text-xl font-semibold text-white">
-          {txStatus}
-        </div>
-      )}
-    </div>
+          {/* Transaction Status */}
+          {txStatus && <div className="mt-4 text-xl font-semibold text-white">{txStatus}</div>}
         </div>
       </div>
-
+    </div>
   );
-
 };
 
 export default PredictionSite;
-
-
