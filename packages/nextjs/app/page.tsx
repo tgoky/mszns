@@ -8,8 +8,9 @@ import sznsABI from "./abi/szns.json";
 import xlr8ABI from "./abi/xlr8.json";
 import { ethers } from "ethers";
 
-const lockerAddress = "0x9432EE4b5CD5e7616955506D7451C4e2D1Ce2623";
+// const lockerAddress = "0x9432EE4b5CD5e7616955506D7451C4e2D1Ce2623";
 
+const lockerAddress = "0xc1F45D44523482552F86BB9660470a8959422D95";
 const getContract = () => {
   if (typeof window === "undefined" || !window.ethereum) {
     throw new Error("Ethereum provider not found");
@@ -89,7 +90,7 @@ const PredictionSite = () => {
 
   const handleLockMon = async (index: number) => {
     const { monAmount } = boxStates[index];
-    const unlockAfterDays = 34; // Unlock after 34 days
+    const unlockAfterDays = 21; // Unlock after 34 days
     const unlockTimestamp = Date.now() + unlockAfterDays * 24 * 60 * 60 * 1000;
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -101,7 +102,7 @@ const PredictionSite = () => {
 
     try {
       const lockTx = await contract.lockMon({
-        value: ethers.utils.parseEther("2"), // Locking 2 MON
+        value: ethers.utils.parseEther("1"), // Locking 2 MON
       });
 
       // Show modal with transaction in progress
@@ -111,7 +112,7 @@ const PredictionSite = () => {
       await lockTx.wait();
 
       // Show modal with success message
-      setModalMessage(`2 MON successfully locked!`);
+      setModalMessage(`1 MON successfully locked! Please Claim your XLR8 tokens. Dont refresh page`);
       setBoxStates(prevState =>
         prevState.map((box, i) =>
           i === index ? { ...box, locked: true, unlockTime: unlockTimestamp, txHash: lockTx.hash } : box,
@@ -134,31 +135,33 @@ const PredictionSite = () => {
     const contract = new ethers.Contract(contractAddress, lockerAbi, signer);
 
     try {
-      // Check if the user has already locked MON
-      const hasLocked = await contract.hasLocked(await signer.getAddress());
+      const userAddress = await signer.getAddress();
 
-      if (!hasLocked) {
-        return alert(` You must lock MON before claiming XLR8.`);
+      // Check if the user has a lock timestamp
+      const lockTimestamp = await contract.lockTimestamps(userAddress);
+
+      if (lockTimestamp.toNumber() === 0) {
+        return alert(`You must lock MON before claiming XLR8.`);
       }
 
       // Proceed with claiming XLR8
       const claimTx = await contract.claimXlr8();
 
-      alert(`Claiming XLR8, please wait...`);
+      setModalMessage(` Claiming XLR8, please wait...`);
 
       // Wait for the transaction to be confirmed
       await claimTx.wait();
 
       // Update UI after success
-      alert(` XLR8 successfully claimed!`);
 
-      // You can add additional logic here if you want to update the UI or state
+      setModalMessage(`XLR8 successfully claimed!`);
+
       setBoxStates(prevState =>
         prevState.map((box, i) => (i === index ? { ...box, claimed: true, txHash: claimTx.hash } : box)),
       );
     } catch (error) {
       console.error(`Error claiming XLR8:`, error);
-      alert(`Box : Failed to claim XLR8. Please try again.`);
+      setModalMessage(`Failed to claim XLR8. Please try again.`);
     }
   };
 
@@ -334,7 +337,7 @@ const PredictionSite = () => {
     setBoxStates(prevState =>
       prevState.map((box, i) => (i === index ? { ...box, locked: false, unlockTime: 0 } : box)),
     );
-    setModalMessage(` Mon will be available to unlock after 34 days of locking`);
+    setModalMessage(` Mon will be available to unlock after 21 days of locking`);
     setModalVisible(true);
   };
 
@@ -400,9 +403,9 @@ const PredictionSite = () => {
                       marginBottom: "8px",
                     }}
                   >
-                    Lock in MONAD to Start Accelerating
+                    Lock 1 MONAD to Start Accelerating
                   </p>
-                  <p className="font-semibold text-lg mb-2">Selected Amount: 2 MON</p>
+                  <p className="font-semibold text-lg mb-2">claim $XLR8 tokens </p>
 
                   <button
                     onClick={() => {

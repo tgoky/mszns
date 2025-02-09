@@ -1,28 +1,32 @@
-import { ethers, deployments, getNamedAccounts } from "hardhat";
+import { ethers } from "hardhat";
 
 async function main() {
-  const { deployer } = await getNamedAccounts();
+  const [deployer] = await ethers.getSigners();
+  console.log(`Deploying contracts with the account: ${deployer.address}`);
 
-  console.log("Deploying contracts with the account:", deployer);
+  const initialTreasury = "0xd9f53DCa4EdACb78E97B5a4A30bC39c7b61EE8ad"; // Replace with your treasury address
+  const PredictionMarket10 = await ethers.getContractFactory("PredictionMarket10");
 
-  // Deploy the contract
-  const predictionMarketDeployment = await deployments.deploy("PredictionMarket3", {
-    from: deployer,
-    args: ["0xd9f53DCa4EdACb78E97B5a4A30bC39c7b61EE8ad"], // Replace with the initial treasury address
-    log: true,
-  });
+  const contract = await PredictionMarket10.deploy(initialTreasury);
+  console.log("Transaction sent. Waiting for deployment...");
 
-  console.log("PredictionMarket deployed at:", predictionMarketDeployment.address);
+  const tx = contract.deploymentTransaction();
 
-  // Get the deployed contract instance
-  const predictionMarket = await ethers.getContractAt("PredictionMarket3", predictionMarketDeployment.address);
+  // ✅ Handle null case
+  if (!tx) {
+    console.error("❌ Deployment transaction not found. Contract may not be deploying correctly.");
+    return;
+  }
 
-  console.log("Contract owner:", await predictionMarket.owner());
+  console.log("Transaction hash:", tx.hash); // ✅ Log transaction hash
+  await tx.wait(); // ✅ Wait for confirmation
+
+  console.log(`PredictionMarket10 deployed at: ${await contract.getAddress()}`);
 }
 
 main()
   .then(() => process.exit(0))
   .catch(error => {
-    console.error(error);
+    console.error("Deployment failed:", error);
     process.exit(1);
   });

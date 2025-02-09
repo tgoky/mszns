@@ -18,13 +18,12 @@ async function main() {
 
   // Wait for deployment to be mined
   await xlr8.deploymentTransaction();
-    console.log("SZNS contract deployed at:", await xlr8.getAddress());
-
+  console.log("XLR8 contract deployed at:", await xlr8.getAddress());
 }
 
 main()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error(error);
     process.exit(1);
   });

@@ -9,10 +9,11 @@ import "solidity-coverage";
 import "@nomicfoundation/hardhat-verify";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
+import "@openzeppelin/hardhat-upgrades";
 
 // If not set, it uses the hardhat account 0 private key.
 const deployerPrivateKey =
-  process.env.DEPLOYER_PRIVATE_KEY ?? "b49a6be9115d615b51d33b9ac9f475c508b2e2947acf48f2228a43402458d1fc";
+  process.env.DEPLOYER_PRIVATE_KEY ?? "77517a665f3684236594dfae11a86316e7197edbd573e83ade8753b81b21b148";
 
 // If not set, it uses ours Etherscan default API key.
 // const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
@@ -37,7 +38,7 @@ const config: HardhatUserConfig = {
         version: "0.5.0", // Specify the Solidity version 0.7.6
         settings: {
           optimizer: {
-            enabled: true,  // Enable optimizer
+            enabled: true, // Enable optimizer
             runs: 200, // Set optimizer runs (for gas efficiency)
           },
         },
@@ -46,7 +47,16 @@ const config: HardhatUserConfig = {
         version: "0.5.16", // Specify the Solidity version 0.7.6
         settings: {
           optimizer: {
-            enabled: true,  // Enable optimizer
+            enabled: true, // Enable optimizer
+            runs: 200, // Set optimizer runs (for gas efficiency)
+          },
+        },
+      },
+      {
+        version: "0.8.22", // Specify the Solidity version 0.7.6
+        settings: {
+          optimizer: {
+            enabled: true, // Enable optimizer
             runs: 200, // Set optimizer runs (for gas efficiency)
           },
         },
@@ -81,7 +91,7 @@ const config: HardhatUserConfig = {
     customChains: [
       {
         network: "monadDevnet",
-        chainId: 20143,
+        chainId: 10143,
         urls: {
           browserURL: process.env.MONAD_EXPLORER_URL ?? "", // Correct explorer URL
           apiURL: process.env.MONAD_EXPLORER_URL ? `${process.env.MONAD_EXPLORER_URL}/api` : "", // Ensure a valid API URL is available, or leave empty

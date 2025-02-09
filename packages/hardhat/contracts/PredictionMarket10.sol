@@ -1,7 +1,9 @@
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract PredictionMarket2 {
+contract PredictionMarket10 {
+
     struct Prediction {
         uint256 id;
         string title;
@@ -20,6 +22,7 @@ contract PredictionMarket2 {
     uint256 public predictionCount;
     address public owner;
     address public treasury; // Treasury address to receive the fees
+    uint256 public excessFunds; // Tracks leftover funds from previous predictions
 
     mapping(uint256 => Prediction) public predictions;
     mapping(address => mapping(uint256 => Bet)) public userBets; // User bets for each prediction
@@ -30,21 +33,26 @@ contract PredictionMarket2 {
     event BetPlaced(address indexed user, uint256 predictionId, string vote, uint256 amount);
     event PredictionResolved(uint256 predictionId, string result);
     event TreasuryUpdated(address oldTreasury, address newTreasury);
+    event ExcessFundsHandled(string action, uint256 amount);
 
-    // Modifier to ensure only non-resolved predictions can be bet on
+    // Modifiers
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can perform this action");
+        _;
+    }
+
     modifier onlyOpenPrediction(uint256 predictionId) {
         require(!predictions[predictionId].resolved, "Prediction already resolved");
         _;
     }
 
-    // Constructor to initialize the contract owner and treasury address
     constructor(address _initialTreasury) {
         owner = msg.sender;
         treasury = _initialTreasury;
     }
 
     // Create a new prediction
-    function createPrediction(string memory _title, string memory _category) external {
+    function createPrediction(string memory _title, string memory _category) external onlyOwner {
         predictionCount++;
 
         predictions[predictionCount] = Prediction({
@@ -63,19 +71,20 @@ contract PredictionMarket2 {
     // Place a bet on a prediction (either "yes" or "no")
     function placeBet(uint256 predictionId, string memory vote) external payable onlyOpenPrediction(predictionId) {
         require(msg.value > 0, "Bet amount must be greater than zero");
-        require(keccak256(bytes(vote)) == keccak256(bytes("yes")) || keccak256(bytes(vote)) == keccak256(bytes("no")), "Invalid vote");
+        require(
+            keccak256(bytes(vote)) == keccak256(bytes("yes")) ||
+                keccak256(bytes(vote)) == keccak256(bytes("no")),
+            "Invalid vote"
+        );
 
         Bet storage userBet = userBets[msg.sender][predictionId];
         require(userBet.amount == 0, "Already placed a bet on this prediction");
 
-        // Calculate 1% fee and send it to the treasury
         uint256 fee = (msg.value * 1) / 100;
-        payable(treasury).transfer(fee);  // Transfer the fee to the treasury
+        payable(treasury).transfer(fee);
 
-        // Remaining bet amount after fee deduction
         uint256 remainingBetAmount = msg.value - fee;
 
-        // Update votes based on user's choice
         if (keccak256(bytes(vote)) == keccak256(bytes("yes"))) {
             predictions[predictionId].yesVotes += remainingBetAmount;
         } else {
@@ -89,12 +98,25 @@ contract PredictionMarket2 {
     }
 
     // Resolve the prediction (must be called after the event happens)
-    function resolvePrediction(uint256 predictionId, string memory result) external {
+    function resolvePrediction(uint256 predictionId, string memory result) external onlyOwner {
         require(!predictions[predictionId].resolved, "Prediction already resolved");
-        require(keccak256(bytes(result)) == keccak256(bytes("yes")) || keccak256(bytes(result)) == keccak256(bytes("no")), "Invalid result");
+        require(
+            keccak256(bytes(result)) == keccak256(bytes("yes")) ||
+                keccak256(bytes(result)) == keccak256(bytes("no")),
+            "Invalid result"
+        );
 
-        predictions[predictionId].resolved = true;
-        predictions[predictionId].result = result;
+        Prediction storage prediction = predictions[predictionId];
+        prediction.resolved = true;
+        prediction.result = result;
+
+        uint256 totalPool = prediction.yesVotes + prediction.noVotes;
+        uint256 winningPool = keccak256(bytes(result)) == keccak256(bytes("yes"))
+            ? prediction.yesVotes
+            : prediction.noVotes;
+
+        // Excess funds are the losing side's bets
+        excessFunds += totalPool - winningPool;
 
         emit PredictionResolved(predictionId, result);
     }
@@ -110,33 +132,38 @@ contract PredictionMarket2 {
         uint256 payout = 0;
 
         if (keccak256(bytes(userBet.vote)) == keccak256(bytes(prediction.result))) {
-            // User bet correctly, they win
-            uint256 totalBetAmount = prediction.yesVotes + prediction.noVotes;
-            uint256 winningAmount = userBet.amount * totalBetAmount / (keccak256(bytes(prediction.result)) == keccak256(bytes("yes")) ? prediction.yesVotes : prediction.noVotes);
-            payout = winningAmount;
+            uint256 totalWinningPool =
+                keccak256(bytes(prediction.result)) == keccak256(bytes("yes"))
+                    ? prediction.yesVotes
+                    : prediction.noVotes;
+
+            payout = (userBet.amount * (prediction.yesVotes + prediction.noVotes)) / totalWinningPool;
         }
 
-        // Reset user's bet
+        require(payout > 0, "No payout due");
+
         userBet.amount = 0;
         userBet.vote = "";
-
-        // Transfer payout to the user
-        require(payout > 0, "No payout due");
 
         balances[msg.sender] += payout;
         payable(msg.sender).transfer(payout);
     }
 
-    // Function to check balance of a user
-    function getBalance() external view returns (uint256) {
-        return balances[msg.sender];
-    }
+    // Handle excess funds (withdraw, burn, or boost)
+    function handleExcessFunds(string memory action) external onlyOwner {
+        require(excessFunds > 0, "No excess funds available");
 
-    // Function to withdraw user funds (if they want to withdraw MON)
-    function withdraw(uint256 amount) external {
-        require(balances[msg.sender] >= amount, "Insufficient balance");
-        balances[msg.sender] -= amount;
-        payable(msg.sender).transfer(amount);
+        if (keccak256(bytes(action)) == keccak256(bytes("withdraw"))) {
+            uint256 amount = excessFunds;
+            excessFunds = 0;
+            payable(owner).transfer(amount);
+            emit ExcessFundsHandled("withdraw", amount);
+        } else if (keccak256(bytes(action)) == keccak256(bytes("burn"))) {
+            excessFunds = 0;
+            emit ExcessFundsHandled("burn", 0);
+        } else {
+            revert("Invalid action");
+        }
     }
 
     // Function to get contract's balance
