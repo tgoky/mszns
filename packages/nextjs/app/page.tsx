@@ -333,12 +333,62 @@ const PredictionSite = () => {
     );
   };
 
-  const handleUnlockMon = (index: number) => {
-    setBoxStates(prevState =>
-      prevState.map((box, i) => (i === index ? { ...box, locked: false, unlockTime: 0 } : box)),
-    );
-    setModalMessage(` Mon will be available to unlock after 21 days of locking`);
-    setModalVisible(true);
+  const handleUnlockMon = async (index: number) => {
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(lockerAddress, lockerABI, signer);
+      const userAddress = await signer.getAddress();
+
+      console.log("Fetching lock timestamp for:", userAddress);
+
+      // Fetch user's lock timestamp from the contract
+      const lockTimestamp = await contract.lockTimestamps(userAddress);
+      const lockTimeInSeconds = lockTimestamp.toNumber();
+      console.log("Lock Timestamp:", lockTimeInSeconds);
+
+      if (lockTimeInSeconds === 0) {
+        alert("You have not locked any MON.");
+        return;
+      }
+
+      // Calculate the time left
+      const currentTime = Math.floor(Date.now() / 1000);
+      const unlockTime = lockTimeInSeconds + 21 * 24 * 60 * 60; // 21 days in seconds
+      const timeLeft = unlockTime - currentTime;
+
+      console.log(`Current Time: ${currentTime}, Unlock Time: ${unlockTime}, Time Left: ${timeLeft}`);
+
+      if (timeLeft > 0) {
+        // Convert seconds to days, hours, and minutes
+        const daysLeft = Math.floor(timeLeft / (24 * 60 * 60));
+        const hoursLeft = Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60));
+        const minutesLeft = Math.floor((timeLeft % (60 * 60)) / 60);
+
+        const message = `Your MON will be available to unlock in ${daysLeft} days, ${hoursLeft} hours, and ${minutesLeft} minutes.`;
+        console.log(message);
+        setModalMessage(message);
+        setModalVisible(true);
+        return;
+      }
+
+      // If 21 days have passed, allow unlocking
+      console.log("Unlocking MON...");
+      const unlockTx = await contract.unlockMon();
+      console.log("Transaction sent:", unlockTx.hash);
+      alert("Unlocking MON, please wait...");
+
+      await unlockTx.wait();
+      console.log("Transaction confirmed");
+
+      alert("MON successfully unlocked!");
+      setBoxStates(prevState =>
+        prevState.map((box, i) => (i === index ? { ...box, locked: false, unlockTime: 0 } : box)),
+      );
+    } catch (error) {
+      console.error("Error unlocking MON:", error);
+      alert("Failed to unlock MON. Please try again.");
+    }
   };
 
   // Handle claiming SZNS tokens after burning XLR8
