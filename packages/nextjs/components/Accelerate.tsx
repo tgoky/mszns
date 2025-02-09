@@ -38,8 +38,20 @@ const Accelerate = () => {
   };
 
   return (
-    <div className="min-h-screen bg-yellow-500 flex flex-col items-center p-6">
-      <h1 className="text-4xl font-bold text-white mb-8 font-modak">Accelerate Starter Pack</h1>
+    <div
+      className="min-h-screen bg-yellow-500 flex flex-col items-center p-6 
+                border-4 border-yellow-700 shadow-[10px_10px_0px_0px_#B45309] 
+                hover:shadow-[8px_8px_0px_0px_#B45309] hover:translate-x-[2px] hover:translate-y-[2px] 
+                active:shadow-[4px_4px_0px_0px_#B45309] active:translate-x-[4px] active:translate-y-[4px] 
+                transition-all"
+    >
+      <h1
+        className="relative text-3xl md:text-4xl font-bold text-white mb-6 font-modak uppercase tracking-wide 
+               drop-shadow-[3px_3px_0px_#FACC15] 
+               hover:drop-shadow-[2px_2px_0px_#EAB308] transition-all duration-200"
+      >
+        Accelerate Starter Pack
+      </h1>
 
       {/* Single Rectangle Card */}
       <div className="bg-orange-800 shadow-lg hover:shadow-xl transition rounded-lg overflow-hidden w-full max-w-5xl">
@@ -67,7 +79,14 @@ const Accelerate = () => {
                   passHref
                   onClick={() => verifyTask(task.id)} // Trigger verification on click
                 >
-                  <button className="bg-green-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">
+                  <button
+                    className="px-6 py-3 bg-green-500 text-white font-black text-lg rounded-lg
+                   border-4 border-green-700 shadow-[6px_6px_0px_0px_#065F46] 
+                   hover:bg-red-600 hover:border-red-800 hover:shadow-[4px_4px_0px_0px_#7F1D1D] 
+                   hover:translate-x-[2px] hover:translate-y-[2px] 
+                   active:shadow-[2px_2px_0px_0px_#7F1D1D] active:translate-x-[4px] active:translate-y-[4px] 
+                   transition-all uppercase tracking-widest"
+                  >
                     {task.buttonText}
                   </button>
                 </Link>

@@ -429,7 +429,12 @@ const PredictionSite = () => {
 
       {/* Content */}
       <div className="flex flex-row flex-grow mt-24">
-        <div className="w-full md:w-1/2 p-6 overflow-hidden">
+        <div
+          className="w-full md:w-1/2 p-6 overflow-hidden bg-white border-4 border-gray-800 rounded-xl 
+                shadow-[8px_8px_0px_0px_#4B5563] hover:shadow-[6px_6px_0px_0px_#4B5563] 
+                hover:translate-x-[2px] hover:translate-y-[2px] 
+                active:shadow-[4px_4px_0px_0px_#4B5563] active:translate-x-[4px] active:translate-y-[4px] transition-all"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {seasonData.map(({ id, name }, index) => (
               <div
@@ -447,25 +452,31 @@ const PredictionSite = () => {
                 <h2 className="text-xl font-bold mb-2">{name}</h2>
                 <div className="bg-pink-200 rounded-lg p-4 mt-4 shadow-lg">
                   <p
-                    style={{
-                      fontFamily: "'Modak', sans-serif",
-                      color: "navy",
-                      marginBottom: "8px",
-                    }}
+                    className="relative text-lg md:text-xl font-bold text-navy mb-2 font-modak uppercase tracking-wide 
+               drop-shadow-[3px_3px_0px_#284893] 
+               before:absolute before:-top-[1px] before:-left-[1px] before:text-[#566947] before:opacity-80 
+               before:content-['Lock_1_MONAD_to_Start_Accelerating'] 
+               after:absolute after:top-[1px] after:left-[1px] after:text-[#d7812c] after:opacity-80 
+               after:content-['Lock_1_MONAD_to_Start_Accelerating']"
                   >
                     Lock 1 MONAD to Start Accelerating
                   </p>
+
                   <p className="font-semibold text-lg mb-2">claim $XLR8 tokens </p>
 
                   <button
                     onClick={() => {
                       handleLockMon(index);
-                      setModalMessage(` Transaction in progress, please wait...`);
+                      setModalMessage(`Transaction in progress, please wait...`);
                       setModalVisible(true);
                     }}
-                    className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mb-2 ${
-                      boxStates[index].locked ? "bg-gray-400 text-white cursor-not-allowed" : "bg-yellow-400 text-black"
-                    }`}
+                    className={`px-5 py-2 text-white font-black text-lg rounded-md w-full max-w-[200px] mb-2
+    border-4 transition-all
+    ${
+      boxStates[index].locked
+        ? "bg-gray-400 border-gray-600 text-white cursor-not-allowed shadow-none"
+        : "bg-[#EC4899] border-[#DB2777] shadow-[6px_6px_0px_0px_#BE185D] hover:shadow-[4px_4px_0px_0px_#BE185D] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#BE185D] active:translate-x-[4px] active:translate-y-[4px]"
+    }`}
                     disabled={boxStates[index].locked} // Disable button when locked
                   >
                     {boxStates[index].locked ? "LOCKED IN" : "Lock MON"}
@@ -474,11 +485,13 @@ const PredictionSite = () => {
                   {boxStates[index] && (
                     <button
                       onClick={() => handleUnlockMon(index)}
-                      className={`px-4 py-2 rounded-lg font-bold w-full max-w-[200px] mt-4 ${
-                        Date.now() < boxStates[index].unlockTime
-                          ? "bg-gray-400 text-white cursor-not-allowed"
-                          : "bg-red-400 text-white"
-                      }`}
+                      className={`px-5 py-2 text-white font-black text-lg rounded-md w-full max-w-[200px] mt-4
+      border-4 transition-all
+      ${
+        Date.now() < boxStates[index].unlockTime
+          ? "bg-gray-400 border-gray-600 text-white cursor-not-allowed shadow-none"
+          : "bg-red-400 border-red-600 shadow-[6px_6px_0px_0px_#B91C1C] hover:shadow-[4px_4px_0px_0px_#B91C1C] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#B91C1C] active:translate-x-[4px] active:translate-y-[4px]"
+      }`}
                       disabled={Date.now() < boxStates[index].unlockTime}
                     >
                       {Date.now() < boxStates[index].unlockTime
@@ -540,13 +553,25 @@ const PredictionSite = () => {
 
         {/* Right Side */}
         <div className="w-1/2 p-4">
-          <div className="bg-yellow-500 p-4 rounded-lg shadow-md text-center">
+          <div
+            className="bg-yellow-500 p-4 rounded-lg border-4 border-yellow-700 shadow-[6px_6px_0px_0px_#B45309] 
+                hover:shadow-[4px_4px_0px_0px_#B45309] hover:translate-x-[2px] hover:translate-y-[2px] 
+                active:shadow-[2px_2px_0px_0px_#B45309] active:translate-x-[4px] active:translate-y-[4px] 
+                text-center font-bold text-black transition-all"
+          >
             <div className="mt-6 text-center">
               <img src="/monadszns.gif" alt="NFT preview" className="mx-auto w-full max-w-md" />
             </div>
             {/* Mint progress container */}
+            <br></br>
 
-            <button onClick={handleStakeXlr8} className="mt-4 px-4 py-2 bg-pink-400 rounded-lg text-black font-bold">
+            <button
+              onClick={handleStakeXlr8}
+              className="  px-5 py-2 bg-[#b6eb25] text-white font-bold text-lg rounded-xl
+  border-4 border-[#b2e032]
+  shadow-[0_0_10px_#66b049] hover:shadow-[0_0_20px_#60A5FA]
+  transition-all animate-pulse"
+            >
               Monad SZN Mint Coming
             </button>
           </div>
@@ -556,19 +581,42 @@ const PredictionSite = () => {
           {/* Accelerate Bar */}
           {/* Accelerate Bar */}
           {/* Accelerate Bar */}
-          <div className="mt-6 bg-green-800 p-6 rounded-lg shadow-md text-white text-center">
+          <div
+            className="mt-6 bg-green-800 p-6 rounded-lg border-4 border-green-900 shadow-[6px_6px_0px_0px_#065F46] 
+                hover:shadow-[4px_4px_0px_0px_#065F46] hover:translate-x-[2px] hover:translate-y-[2px] 
+                active:shadow-[2px_2px_0px_0px_#065F46] active:translate-x-[4px] active:translate-y-[4px] 
+                text-white text-center font-bold transition-all"
+          >
             <h3 className="text-xl font-bold mb-4">Accelerate Bar</h3>
 
             {/* Blue containers for xlr8 and szn balances side by side with space between */}
             <div className="mt-4 flex justify-between gap-6 mb-6">
               {/* xlr8 Balance container */}
               <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
-                <p className="text-lg font-semibold">accelerate across monad</p>
+                <p className="text-lg font-extrabold text-white relative uppercase tracking-wide">
+                  <span className="absolute top-[2px] left-[2px] text-black opacity-80">accelerate across monad</span>
+                  <span className="absolute top-[4px] left-[4px] text-gray-700 opacity-60">
+                    accelerate across monad
+                  </span>
+                  <span className="absolute top-[6px] left-[6px] text-gray-500 opacity-40">
+                    accelerate across monad
+                  </span>
+                  accelerate across monad
+                </p>
               </div>
 
               {/* szn Balance container */}
               <div className="p-4 bg-orange-500 text-white rounded-lg shadow-lg flex-1 ">
-                <p className="text-lg font-semibold">SZNS </p>
+                <p className="text-lg font-extrabold text-white relative uppercase tracking-wide">
+                  <span className="absolute top-[2px] left-[2px] text-black opacity-80">accelerate across monad</span>
+                  <span className="absolute top-[4px] left-[4px] text-gray-700 opacity-60">
+                    accelerate across monad
+                  </span>
+                  <span className="absolute top-[6px] left-[6px] text-gray-500 opacity-40">
+                    accelerate across monad
+                  </span>
+                  accelerate across monad
+                </p>
               </div>
             </div>
 
@@ -608,13 +656,22 @@ const PredictionSite = () => {
                 </button>
               </div>
             </div>
-
-            <button onClick={handleApproveXlr8} className="px-6 py-3 bg-pink-500 rounded-lg text-black font-bold ">
+            <button
+              onClick={handleApproveXlr8}
+              className="px-6 py-3 bg-pink-500 text-black font-black text-lg rounded-lg border-4 border-pink-700 shadow-[6px_6px_0px_0px_#BE185D] 
+             hover:shadow-[4px_4px_0px_0px_#BE185D] hover:translate-x-[2px] hover:translate-y-[2px] 
+             active:shadow-[2px_2px_0px_0px_#BE185D] active:translate-x-[4px] active:translate-y-[4px] transition-all"
+            >
               Approve XLR8 ...
             </button>
 
-            <button onClick={handleBurnXlr8ForSzn} className="px-6 py-3 bg-blue-500 rounded-lg text-white font-bold ">
-              burn SZNS (coming soon)
+            <button
+              onClick={handleBurnXlr8ForSzn}
+              className="px-6 py-3 bg-blue-500 text-white font-black text-lg rounded-lg border-4 border-blue-700 shadow-[6px_6px_0px_0px_#1E3A8A] 
+             hover:shadow-[4px_4px_0px_0px_#1E3A8A] hover:translate-x-[2px] hover:translate-y-[2px] 
+             active:shadow-[2px_2px_0px_0px_#1E3A8A] active:translate-x-[4px] active:translate-y-[4px] transition-all"
+            >
+              SZNS (coming soon)
             </button>
           </div>
 

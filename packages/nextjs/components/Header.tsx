@@ -4,10 +4,12 @@ import React, { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Accelerate from "./Accelerate";
 import { Bars3Icon, UserCircleIcon } from "@heroicons/react/24/outline";
-import { useOutsideClick } from "~~/hooks/scaffold-eth";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import Accelerate from "./Accelerate"; // Import the Accelerate component
+import { useOutsideClick } from "~~/hooks/scaffold-eth";
+
+// Import the Accelerate component
 
 type HeaderMenuLink = {
   label: string;
@@ -51,8 +53,14 @@ export const Header = () => {
   const burgerMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  useOutsideClick(burgerMenuRef, useCallback(() => setIsDrawerOpen(false), []));
-  useOutsideClick(profileMenuRef, useCallback(() => setIsProfileOpen(false), []));
+  useOutsideClick(
+    burgerMenuRef,
+    useCallback(() => setIsDrawerOpen(false), []),
+  );
+  useOutsideClick(
+    profileMenuRef,
+    useCallback(() => setIsProfileOpen(false), []),
+  );
 
   return (
     <div className="sticky lg:static bg-yellow-500 top-0 navbar bg-base-200 min-h-0 flex-shrink-0 justify-between z-20 border-b-2 border-base-100 px-0 sm:px-2 py-4">
@@ -62,7 +70,7 @@ export const Header = () => {
             tabIndex={0}
             className={`ml-1 btn btn-ghost ${isDrawerOpen ? "hover:bg-secondary" : "hover:bg-transparent"}`}
             onClick={() => {
-              setIsDrawerOpen((prevIsOpenState) => !prevIsOpenState);
+              setIsDrawerOpen(prevIsOpenState => !prevIsOpenState);
             }}
           >
             <Bars3Icon className="h-1/2" />
@@ -91,7 +99,9 @@ export const Header = () => {
       {/* Center Menu for Modal */}
       <div className="navbar-center">
         <button
-          className="btn btn-primary text-white bg-orange-500 font-bold px-6 py-2 rounded-full"
+          className="px-6 py-3 bg-orange-500 text-white font-black text-lg rounded-full border-4 border-orange-700 shadow-[6px_6px_0px_0px_#9A3412] 
+             hover:shadow-[4px_4px_0px_0px_#9A3412] hover:translate-x-[2px] hover:translate-y-[2px] 
+             active:shadow-[2px_2px_0px_0px_#9A3412] active:translate-x-[4px] active:translate-y-[4px] transition-all"
           onClick={() => setIsModalOpen(true)}
         >
           Click for Accelerate Starter Pack!
@@ -99,10 +109,7 @@ export const Header = () => {
       </div>
       <div className="navbar-end flex-grow mr-4 flex items-center space-x-4">
         <div className="relative" ref={profileMenuRef}>
-          <button
-            className="btn btn-ghost btn-circle"
-            onClick={() => setIsProfileOpen((prev) => !prev)}
-          >
+          <button className="btn btn-ghost btn-circle" onClick={() => setIsProfileOpen(prev => !prev)}>
             <UserCircleIcon className="h-8 w-8" />
           </button>
           {isProfileOpen && (
