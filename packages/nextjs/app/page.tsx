@@ -20,10 +20,10 @@ const getContract = () => {
   return new ethers.Contract(lockerAddress, lockerABI, signer);
 };
 const seasonData = [
-  { id: 1, name: "Spring" },
-  { id: 2, name: "Summer" },
-  { id: 3, name: "Fall" },
-  { id: 4, name: "Winter" },
+  { id: 1, name: "🌸 Spring" },
+  { id: 2, name: "☀️  Summer" },
+  { id: 3, name: "🍂 Fall" },
+  { id: 4, name: "❄ Winter" },
 ];
 
 const currentSeasonId = 4; // Corresponds to "Winter"
@@ -524,7 +524,6 @@ const PredictionSite = () => {
 
                 {/* Accelerate Bar */}
                 <div className="mt-4">
-                  <p className="text-sm mb-2">Accelerate Progress</p>
                   <div className="relative pt-1">
                     <div className="flex mb-2 items-center justify-between">
                       <div>
