@@ -23,8 +23,16 @@ const Accelerate = () => {
       id: "telegram",
       title: "Join our Telegram",
       description: "Accelerate with the community on TG",
-      link: "https://t.me/yourtelegram",
+      link: "https://t.me/monadszns",
       buttonText: "Join Telegram",
+      completed: false,
+    },
+    {
+      id: "discord",
+      title: "Join our Discord",
+      description: "connect, engage and earn roles",
+      link: "https://discord.gg/TdX2NaXgP3",
+      buttonText: "Join Discord",
       completed: false,
     },
   ]);
