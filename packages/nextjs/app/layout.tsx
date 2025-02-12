@@ -7,7 +7,7 @@ import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 export const metadata = getMetadata({
   title: "monad szns",
-  description: "szn 1",
+  description: "accelerate on monad",
 });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {

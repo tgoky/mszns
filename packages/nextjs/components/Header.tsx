@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Accelerate from "./Accelerate";
-import { Bars3Icon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import { FaucetButton, RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
 import { useOutsideClick } from "~~/hooks/scaffold-eth";
 
@@ -47,19 +47,13 @@ export const HeaderMenuLinks = () => {
 
 export const Header = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // State for the modal
 
   const burgerMenuRef = useRef<HTMLDivElement>(null);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useOutsideClick(
     burgerMenuRef,
     useCallback(() => setIsDrawerOpen(false), []),
-  );
-  useOutsideClick(
-    profileMenuRef,
-    useCallback(() => setIsProfileOpen(false), []),
   );
 
   return (
@@ -108,19 +102,7 @@ export const Header = () => {
         </button>
       </div>
       <div className="navbar-end flex-grow mr-4 flex items-center space-x-4">
-        <div className="relative" ref={profileMenuRef}>
-          <button className="btn btn-ghost btn-circle" onClick={() => setIsProfileOpen(prev => !prev)}>
-            <UserCircleIcon className="h-8 w-8" />
-          </button>
-          {isProfileOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-gray-500 rounded-lg shadow-lg p-4 z-30 border border-green-500">
-              <div className="flex flex-col items-center justify-center mb-4 border-b border-green-500 pb-4">
-                <RainbowKitCustomConnectButton />
-              </div>
-              <div className="flex flex-col items-center justify-center pt-4"></div>
-            </div>
-          )}
-        </div>
+        <RainbowKitCustomConnectButton />
         <FaucetButton />
       </div>
       {/* Modal */}
