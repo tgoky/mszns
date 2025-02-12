@@ -348,7 +348,7 @@ const PredictionSite = () => {
       console.log("Lock Timestamp:", lockTimeInSeconds);
 
       if (lockTimeInSeconds === 0) {
-        alert("You have not locked any MON.");
+        setModalMessage(`You have not locked any MON`);
         return;
       }
 
