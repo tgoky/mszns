@@ -348,11 +348,11 @@ const PredictionSite = () => {
       console.log("Lock Timestamp:", lockTimeInSeconds);
 
       if (lockTimeInSeconds === 0) {
-        setModalMessage(`You have not locked any MON`);
+        alert("You have not locked any MON.");
         return;
       }
 
-      // Calculate the time left
+      // Calculate the time left for the lock to expire
       const currentTime = Math.floor(Date.now() / 1000);
       const unlockTime = lockTimeInSeconds + 21 * 24 * 60 * 60; // 21 days in seconds
       const timeLeft = unlockTime - currentTime;
